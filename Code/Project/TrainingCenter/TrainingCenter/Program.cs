@@ -134,6 +134,116 @@ ShowReports(context);
 ShowStudentsPerStatusHaving(context);
 
 
+
+
+// Call main methods
+CompareInclude(context);
+
+
+/// <summary>
+/// Demonstrates bad vs good loading of related data using manual queries vs Include().
+/// </summary>
+static void CompareInclude(AppDbContext context)
+{
+    ShowBadNPlusOneApproach(context);
+
+    PrintSeparator();
+
+    ShowGoodIncludeApproach(context);
+}
+
+
+/// <summary>
+/// Demonstrates the bad N+1 approach by loading students first,
+/// then running one additional count query per student.
+/// </summary>
+static void ShowBadNPlusOneApproach(AppDbContext context)
+{
+    Console.WriteLine("BAD APPROACH - N+1 Problem");
+    Console.WriteLine("--------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var studentsQuery =
+        context.Students;
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(studentsQuery.ToQueryString());
+
+    // Execute first query: load all students
+    var students = studentsQuery.ToList();
+
+    Console.WriteLine();
+
+    foreach (var student in students)
+    {
+        // Build query first for each student
+        var enrollmentsQuery =
+            context.Enrollments
+                   .Where(e => e.StudentId == student.StudentId);
+
+        // Preview SQL query shape
+        PreviewSQLUsingToQueryString(enrollmentsQuery.ToQueryString());
+
+        // Execute Count() for each student
+        // ToQueryString previews query shape,
+        // runtime logging shows actual executed SQL for Count().
+        int enrollmentsCount =
+            enrollmentsQuery.Count();
+
+        Console.WriteLine(
+            $"{student.FirstName} {student.LastName} - Enrollments: {enrollmentsCount}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("Problem: One query for students + one query per student.");
+    Console.WriteLine();
+}
+
+
+/// <summary>
+/// Demonstrates the good approach by loading students with their enrollments using Include().
+/// </summary>
+static void ShowGoodIncludeApproach(AppDbContext context)
+{
+    Console.WriteLine("GOOD APPROACH - Include()");
+    Console.WriteLine("-------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var query =
+        context.Students
+               .Include(s => s.Enrollments);
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(query.ToQueryString());
+
+    // Execute query
+    var studentsWithEnrollments = query.ToList();
+
+    Console.WriteLine();
+    foreach (var student in studentsWithEnrollments)
+    {
+        Console.WriteLine(
+            $"{student.FirstName} {student.LastName} - Enrollments: {student.Enrollments.Count}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("Result: Related enrollments are loaded with the students.");
+    Console.WriteLine();
+}
+
+
+/// <summary>
+/// Prints a separator between examples.
+/// </summary>
+static void PrintSeparator()
+{
+    Console.WriteLine(new string('-', 60));
+    Console.WriteLine();
+}
+
+
 /// <summary>
 /// Shows statuses having more than 2 students.
 /// </summary>
@@ -461,17 +571,6 @@ static void CompareSum(AppDbContext context)
     Console.WriteLine($"Good Sum (calculated in database): {goodSum}");
     Console.WriteLine();
 }
-
-
-/// <summary>
-/// Prints a separator between examples.
-/// </summary>
-static void PrintSeparator()
-{
-    Console.WriteLine(new string('-', 60));
-    Console.WriteLine();
-}
-
 
 
 
