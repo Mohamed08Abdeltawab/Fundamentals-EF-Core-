@@ -124,6 +124,92 @@ CompareSum(context);
 ShowMinMax(context);
 
 
+
+// Call main methods
+ShowReports(context);
+
+
+/// <summary>
+/// Demonstrates Distinct() and GroupBy() reporting queries.
+/// </summary>
+static void ShowReports(AppDbContext context)
+{
+    ShowDistinctStudentStatuses(context);
+
+    Console.WriteLine();
+
+    ShowStudentsPerStatusReport(context);
+}
+
+
+/// <summary>
+/// Shows unique student statuses using Distinct().
+/// </summary>
+static void ShowDistinctStudentStatuses(AppDbContext context)
+{
+    Console.WriteLine("Unique Student Statuses");
+    Console.WriteLine("-----------------------");
+
+    // Build query first
+    var query =
+        context.Students
+               .Select(s => s.Status)
+               .Distinct();
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(query.ToQueryString());
+
+
+
+    // Execute query
+    var statuses = query.ToList();
+
+    Console.WriteLine();
+    // Print readable output
+    foreach (var status in statuses)
+    {
+        Console.WriteLine(status);
+    }
+}
+
+
+/// <summary>
+/// Shows number of students grouped by status.
+/// </summary>
+static void ShowStudentsPerStatusReport(AppDbContext context)
+{
+    Console.WriteLine("Students Per Status");
+    Console.WriteLine("-------------------");
+
+    // Build query first
+    var query =
+       context.Students
+              .GroupBy(s => s.Status)
+              .Select(g => new
+              {
+                  Status = g.Key,
+                  TotalStudents = g.Count()
+              })
+              .OrderBy(x => x.Status);
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(query.ToQueryString());
+
+    // Execute query
+    // ToQueryString previews query shape,
+    // runtime logging shows actual executed SQL for Count().
+    var report = query.ToList();
+
+    Console.WriteLine();
+    // Print readable output
+    foreach (var row in report)
+    {
+        Console.WriteLine($"{row.Status} : {row.TotalStudents}");
+    }
+}
+
+
+
 /// <summary>
 /// Demonstrates Min() and Max() using TrainingCenterDB.
 /// </summary>
