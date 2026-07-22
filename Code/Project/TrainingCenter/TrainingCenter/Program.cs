@@ -119,6 +119,71 @@ PrintSeparator();
 CompareSum(context);
 
 
+
+// Call main methods
+ShowMinMax(context);
+
+
+/// <summary>
+/// Demonstrates Min() and Max() using TrainingCenterDB.
+/// </summary>
+static void ShowMinMax(AppDbContext context)
+{
+    Console.WriteLine("Min() and Max() Example");
+    Console.WriteLine("-----------------------");
+    Console.WriteLine();
+
+    // --------------------------------------------------
+    // Lowest Course Price
+    // --------------------------------------------------
+
+    // Build query first
+    var coursePricesQuery =
+        context.Courses
+               .Select(c => c.Price);
+
+    // Preview SQL query shape
+    PreviewSQLUsingToQueryString(coursePricesQuery.ToQueryString());
+
+    // Execute query
+    // ToQueryString previews query shape,
+    // runtime logging shows actual executed SQL for Min().
+    decimal lowestPrice =
+        coursePricesQuery.Min();
+
+    // Execute query
+    // ToQueryString previews query shape,
+    // runtime logging shows actual executed SQL for Max().
+    decimal highestPrice =
+        coursePricesQuery.Max();
+
+    // --------------------------------------------------
+    // Earliest Registration Date
+    // --------------------------------------------------
+
+    // Build query first
+    var registrationDatesQuery =
+        context.Students
+               .Select(s => s.RegisteredAt);
+
+    // Preview SQL query shape
+    PreviewSQLUsingToQueryString(registrationDatesQuery.ToQueryString());
+
+    // Execute query
+    // ToQueryString previews query shape,
+    // runtime logging shows actual executed SQL for Min().
+    DateTime earliestRegistration =
+        registrationDatesQuery.Min();
+
+    // Print readable output
+    Console.WriteLine($"Lowest Course Price     : {lowestPrice}");
+    Console.WriteLine($"Highest Course Price    : {highestPrice}");
+    Console.WriteLine($"Earliest Registration   : {earliestRegistration:d}");
+    Console.WriteLine();
+}
+
+
+
 /// <summary>
 /// Compares bad vs good COUNT approach.
 /// </summary>
