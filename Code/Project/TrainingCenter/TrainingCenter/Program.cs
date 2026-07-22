@@ -140,16 +140,26 @@ ShowStudentsPerStatusHaving(context);
 CompareInclude(context);
 
 
+
+
+// Call main methods
+CompareApproaches(context);
+
+
 /// <summary>
-/// Demonstrates bad vs good loading of related data using manual queries vs Include().
+/// Compares N+1, Include(), and Projection approaches.
 /// </summary>
-static void CompareInclude(AppDbContext context)
+static void CompareApproaches(AppDbContext context)
 {
     ShowBadNPlusOneApproach(context);
 
     PrintSeparator();
 
-    ShowGoodIncludeApproach(context);
+    ShowBetterIncludeApproach(context);
+
+    PrintSeparator();
+
+    ShowBestProjectionApproach(context);
 }
 
 
@@ -174,7 +184,6 @@ static void ShowBadNPlusOneApproach(AppDbContext context)
     var students = studentsQuery.ToList();
 
     Console.WriteLine();
-
     foreach (var student in students)
     {
         // Build query first for each student
@@ -188,17 +197,114 @@ static void ShowBadNPlusOneApproach(AppDbContext context)
         // Execute Count() for each student
         // ToQueryString previews query shape,
         // runtime logging shows actual executed SQL for Count().
-        int enrollmentsCount =
+        int count =
             enrollmentsQuery.Count();
 
-        Console.WriteLine(
-            $"{student.FirstName} {student.LastName} - Enrollments: {enrollmentsCount}");
+        Console.WriteLine($"{student.FirstName} {student.LastName} - {count}");
     }
 
     Console.WriteLine();
-    Console.WriteLine("Problem: One query for students + one query per student.");
+    Console.WriteLine("Result: Many queries executed. This is the N+1 problem.");
     Console.WriteLine();
 }
+
+
+/// <summary>
+/// Demonstrates the better approach using Include() to load related enrollments.
+/// </summary>
+static void ShowBetterIncludeApproach(AppDbContext context)
+{
+    Console.WriteLine("BETTER APPROACH - Include()");
+    Console.WriteLine("---------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var includeQuery =
+        context.Students
+               .Include(s => s.Enrollments);
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(includeQuery.ToQueryString());
+
+    // Execute query
+    var studentsWithEnrollments = includeQuery.ToList();
+
+    Console.WriteLine();
+    foreach (var student in studentsWithEnrollments)
+    {
+        Console.WriteLine(
+            $"{student.FirstName} {student.LastName} - {student.Enrollments.Count}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("Result: One query, but it loads full related enrollment data.");
+    Console.WriteLine();
+}
+
+
+/// <summary>
+/// Demonstrates the best approach using projection to retrieve only required data.
+/// </summary>
+static void ShowBestProjectionApproach(AppDbContext context)
+{
+    Console.WriteLine("BEST APPROACH - Projection");
+    Console.WriteLine("--------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var projectionQuery =
+        context.Students
+               .Select(s => new
+               {
+                   s.FirstName,
+                   s.LastName,
+                   EnrollmentsCount = s.Enrollments.Count()
+               });
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(projectionQuery.ToQueryString());
+
+    // Execute query
+    // ToQueryString previews query shape,
+    // runtime logging shows actual executed SQL for Count().
+    var result = projectionQuery.ToList();
+
+    Console.WriteLine();
+    foreach (var student in result)
+    {
+        Console.WriteLine(
+            $"{student.FirstName} {student.LastName} - {student.EnrollmentsCount}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("Result: One query, minimal data, best performance.");
+    Console.WriteLine();
+}
+
+
+/// <summary>
+/// Prints a separator between examples.
+/// </summary>
+static void PrintSeparator()
+{
+    Console.WriteLine(new string('-', 60));
+    Console.WriteLine();
+}
+
+
+/// <summary>
+/// Demonstrates bad vs good loading of related data using manual queries vs Include().
+/// </summary>
+static void CompareInclude(AppDbContext context)
+{
+    ShowBadNPlusOneApproach(context);
+
+    PrintSeparator();
+
+    ShowGoodIncludeApproach(context);
+}
+
+
 
 
 /// <summary>
@@ -232,17 +338,6 @@ static void ShowGoodIncludeApproach(AppDbContext context)
     Console.WriteLine("Result: Related enrollments are loaded with the students.");
     Console.WriteLine();
 }
-
-
-/// <summary>
-/// Prints a separator between examples.
-/// </summary>
-static void PrintSeparator()
-{
-    Console.WriteLine(new string('-', 60));
-    Console.WriteLine();
-}
-
 
 /// <summary>
 /// Shows statuses having more than 2 students.
