@@ -96,6 +96,51 @@ GetStudentByIdUsingFind(context);
 GetStudentNames(context);
 
 
+
+
+// Call main methods
+GetFilteredStudents(context);
+
+
+/// <summary>
+/// Demonstrates combining Where(), Select(), and OrderByDescending().
+/// </summary>
+static void GetFilteredStudents(AppDbContext context)
+{
+    Console.WriteLine("Filtered Projection With Sorting");
+    Console.WriteLine("--------------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var query = context.Students.Where(s => s.Status == "Active")
+        .Select(s => new
+        {
+            s.StudentId,
+            FullName = s.FirstName + " " + s.LastName,
+        })
+        .OrderByDescending(s => s.StudentId);
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(query.ToQueryString());
+
+    // Execute query
+    var students = query.ToList();
+
+    // Print results
+    Console.WriteLine("\n\nFiltered Students:");
+    Console.WriteLine("------------------");
+
+    foreach (var student in students)
+    {
+        Console.WriteLine($"{student.StudentId} - {student.FullName}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"Total Students: {students.Count}");
+    Console.WriteLine();
+}
+
+
 /// <summary>
 /// Retrieves only student names using projection.
 /// </summary>
