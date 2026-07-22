@@ -86,6 +86,50 @@ Example_Single(context);
 Example_SingleOrDefault(context);
 
 
+// Call main methods
+GetStudentByIdUsingFind(context);
+
+
+
+/// <summary>
+/// Retrieves student by Primary Key using Find().
+/// Best method for direct PK lookup.
+/// May return tracked entity without executing SQL again.
+/// </summary>
+static void GetStudentByIdUsingFind(AppDbContext context)
+{
+    Console.WriteLine("Using Find()");
+    Console.WriteLine("------------");
+
+    // Find() does not support ToQueryString().
+    // Runtime logging will show actual SQL only if query is sent to database.
+    var student = context.Students.Find(1);
+
+    PrintStudent(student);
+}
+
+
+/// <summary>
+/// Prints student information in readable format.
+/// </summary>
+static void PrintStudent(dynamic? student)
+{
+    if (student != null)
+    {
+        Console.WriteLine("\n\nStudent Found:");
+        Console.WriteLine(
+            $"{student.StudentId} - {student.FirstName} {student.LastName}");
+    }
+    else
+    {
+        Console.WriteLine("Student not found.");
+    }
+
+    Console.WriteLine();
+}
+
+
+
 /// <summary>
 /// First() returns the first matching row.
 /// Use it when at least one row is expected.
