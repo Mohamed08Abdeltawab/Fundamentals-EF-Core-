@@ -71,8 +71,51 @@ Console.WriteLine();
 
 
 // Run examples
-RetrieveAndPrintStudents(context);
-GetActiveStudentsCount(context);
+//RetrieveAndPrintStudents(context);
+//GetActiveStudentsCount(context);
+
+// Call filtering function
+GetActiveStudents(context);
+
+
+/// <summary>
+/// Retrieves only active students using Where()
+/// </summary>
+static void GetActiveStudents(AppDbContext context)
+{
+    // Build query (no execution yet)
+    var query = context.Students
+        .Where(s => s.Status == "Active")
+        .OrderBy(s => s.StudentId);
+
+    // Show generated SQL
+    PreviewSQLUsingToQueryString(query.ToQueryString());
+
+
+    // Execute query
+    var students = query.ToList();
+
+    // Print results
+    Console.WriteLine("\nActive Students:");
+    Console.WriteLine("----------------");
+
+    foreach (var student in students)
+    {
+        Console.WriteLine($"{student.StudentId} - {student.FirstName} {student.LastName}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"Total Active Students: {students.Count}");
+}
+
+static void PreviewSQLUsingToQueryString(string SQLString)
+{
+    Console.WriteLine("\nPreview SQL using ToQueryString():");
+    Console.WriteLine("----------------------------------");
+    Console.WriteLine(SQLString);
+    Console.WriteLine();
+
+}
 
 
 
