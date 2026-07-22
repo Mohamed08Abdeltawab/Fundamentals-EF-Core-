@@ -129,6 +129,49 @@ ShowMinMax(context);
 ShowReports(context);
 
 
+
+
+ShowStudentsPerStatusHaving(context);
+
+
+/// <summary>
+/// Shows statuses having more than 2 students.
+/// </summary>
+static void ShowStudentsPerStatusHaving(AppDbContext context)
+{
+    Console.WriteLine("Statuses With More Than 2 Students");
+    Console.WriteLine("----------------------------------");
+
+    // Build query first
+    var query =
+        context.Students
+               .GroupBy(s => s.Status)
+               .Where(g => g.Count() > 2)
+               .Select(g => new
+               {
+                   Status = g.Key,
+                   TotalStudents = g.Count()
+               })
+               .OrderBy(x => x.Status);
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(
+        query.ToQueryString());
+
+    // Execute query
+    var report = query.ToList();
+
+    Console.WriteLine();
+
+    foreach (var row in report)
+    {
+        Console.WriteLine(
+            $"{row.Status} : {row.TotalStudents}");
+    }
+}
+
+
+
 /// <summary>
 /// Demonstrates Distinct() and GroupBy() reporting queries.
 /// </summary>
