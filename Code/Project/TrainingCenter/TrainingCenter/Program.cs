@@ -102,6 +102,65 @@ GetStudentNames(context);
 GetFilteredStudents(context);
 
 
+
+// Call main methods
+CheckData(context);
+
+
+/// <summary>
+/// Demonstrates Any() and All().
+/// </summary>
+static void CheckData(AppDbContext context)
+{
+    Console.WriteLine("Any() and All() Example");
+    Console.WriteLine("-----------------------");
+    Console.WriteLine();
+
+    // --------------------------------------------------
+    // Any() Example
+    // --------------------------------------------------
+
+    // Build query first
+    var activeStudentsQuery =
+        context.Students
+               .Where(s => s.Status == "Active");
+
+    // Preview SQL query shape
+    PreviewSQLUsingToQueryString(activeStudentsQuery.ToQueryString());
+
+    // Execute query
+    // ToQueryString previews query shape,
+    // runtime logging shows actual executed SQL for Any().
+    bool hasActiveStudents =
+        activeStudentsQuery.Any();
+
+    Console.WriteLine($"Has Active Students: {hasActiveStudents}");
+    Console.WriteLine();
+
+    // --------------------------------------------------
+    // All() Example
+    // --------------------------------------------------
+
+    // Build query first
+    var coursesQuery =
+        context.Courses;
+
+    // Preview SQL query shape
+    PreviewSQLUsingToQueryString(coursesQuery.ToQueryString());
+
+    // Execute query
+    // ToQueryString previews query shape,
+    // runtime logging shows actual executed SQL for All().
+    bool allCoursesValid =
+        coursesQuery.All(c => c.Price > 0);
+
+    Console.WriteLine($"All Courses Price > 0: {allCoursesValid}");
+    Console.WriteLine();
+}
+
+
+
+
 /// <summary>
 /// Demonstrates combining Where(), Select(), and OrderByDescending().
 /// </summary>
@@ -118,7 +177,8 @@ static void GetFilteredStudents(AppDbContext context)
             s.StudentId,
             FullName = s.FirstName + " " + s.LastName,
         })
-        .OrderByDescending(s => s.StudentId);
+        .OrderBy(s => s.FullName)
+        .ThenBy(s => s.StudentId);
 
     // Preview SQL before execution
     PreviewSQLUsingToQueryString(query.ToQueryString());
