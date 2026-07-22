@@ -91,6 +91,53 @@ GetStudentByIdUsingFind(context);
 
 
 
+
+// Call main methods
+GetStudentNames(context);
+
+
+/// <summary>
+/// Retrieves only student names using projection.
+/// </summary>
+static void GetStudentNames(AppDbContext context)
+{
+    Console.WriteLine("Projection Example Using Select()");
+    Console.WriteLine("---------------------------------");
+    Console.WriteLine();
+
+    // Build query first (no execution yet)
+    var query =
+        context.Students
+               .Select(s => new
+               {
+                   s.FirstName,
+                   s.LastName
+               });
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(query.ToQueryString());
+
+    // Execute query
+    var students = query.ToList();
+
+    // Print results
+    Console.WriteLine("\n\nStudent Names:");
+    Console.WriteLine("--------------");
+
+    foreach (var student in students)
+    {
+        Console.WriteLine($"{student.FirstName} {student.LastName}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"\nTotal Students: {students.Count}");
+    Console.WriteLine();
+}
+
+
+
+
+
 /// <summary>
 /// Retrieves student by Primary Key using Find().
 /// Best method for direct PK lookup.
