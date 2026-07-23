@@ -183,7 +183,55 @@ ShowCourseReport(context);
 
 
 // Call main method
-ShowStudentEnrollments(context);
+//ShowStudentEnrollments(context);
+
+
+
+
+// Call main methods
+ShowExpensiveCourses(context);
+
+
+/// <summary>
+/// Shows courses priced above the average course price using a subquery.
+/// </summary>
+static void ShowExpensiveCourses(AppDbContext context)
+{
+    Console.WriteLine("Courses Priced Above Average");
+    Console.WriteLine("----------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var query =
+        context.Courses
+               .Where(c =>
+                   c.Price >
+                   context.Courses.Average(x => x.Price))
+               .OrderBy(c => c.Price);
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(query.ToQueryString());
+
+    // Execute query
+    // ToQueryString previews query shape,
+    // runtime logging shows actual executed SQL for Average().
+    var courses = query.ToList();
+
+    // Print readable output
+    Console.WriteLine("\nExpensive Courses:");
+    Console.WriteLine("------------------");
+
+
+    Console.WriteLine();
+    foreach (var course in courses)
+    {
+        Console.WriteLine(
+            $"{course.Code} - {course.Title} - {course.Price}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"Total Courses: {courses.Count}");
+}
+
 
 
 /// <summary>
