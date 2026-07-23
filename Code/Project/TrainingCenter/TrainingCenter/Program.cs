@@ -199,8 +199,129 @@ ShowCourseReport(context);
 //ComparePagination(context);
 
 
-ShowStudents(context);
-ShowTrackingQuery(context);
+//ShowStudents(context);
+//ShowTrackingQuery(context);
+
+
+// Call main methods
+UpdateStudent(context);
+
+
+/// <summary>
+/// Demonstrates bad and good update approaches in EF Core.
+/// </summary>
+static void UpdateStudent(AppDbContext context)
+{
+    ShowBadUpdateUsingAsNoTracking(context);
+
+    PrintSeparator();
+
+    ShowGoodUpdateUsingTrackedEntity(context);
+}
+
+
+/// <summary>
+/// Demonstrates why AsNoTracking() should not be used when you want EF Core to track updates.
+/// </summary>
+static void ShowBadUpdateUsingAsNoTracking(AppDbContext context)
+{
+    Console.WriteLine("BAD APPROACH - Update Using AsNoTracking()");
+    Console.WriteLine("------------------------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var badQuery =
+        context.Students
+               .AsNoTracking()
+               .Where(s => s.StudentId == 1);
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(badQuery.ToQueryString());
+
+    // Execute query
+    // ToQueryString previews query shape,
+    // runtime logging shows actual executed SQL for FirstOrDefault().
+    var badStudent = badQuery.FirstOrDefault();
+
+    if (badStudent == null)
+    {
+        Console.WriteLine("Student not found.");
+        return;
+    }
+
+    Console.WriteLine($"Original Name: {badStudent.FirstName}");
+
+    // Modify property in memory only
+    badStudent.FirstName = "UpdatedName";
+
+    Console.WriteLine($"Changed Name In Memory: {badStudent.FirstName}");
+
+    // SaveChanges() will not update this entity because it is not tracked
+    int affectedRows = context.SaveChanges();
+
+    Console.WriteLine();
+    Console.WriteLine($"Affected Rows: {affectedRows}");
+    Console.WriteLine("Nothing was updated because the entity was loaded using AsNoTracking().");
+    Console.WriteLine();
+}
+
+
+/// <summary>
+/// Demonstrates the correct update approach using a tracked entity.
+/// </summary>
+static void ShowGoodUpdateUsingTrackedEntity(AppDbContext context)
+{
+    Console.WriteLine("GOOD APPROACH - Update Using Tracked Entity");
+    Console.WriteLine("-------------------------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var goodQuery =
+        context.Students
+               .Where(s => s.StudentId == 1);
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(goodQuery.ToQueryString());
+
+    // Execute query
+    // ToQueryString previews query shape,
+    // runtime logging shows actual executed SQL for FirstOrDefault().
+    var student = goodQuery.FirstOrDefault();
+
+    if (student == null)
+    {
+        Console.WriteLine("Student not found.");
+        return;
+    }
+
+    Console.WriteLine($"Before Update: {student.FirstName}");
+
+    // Modify property while entity is tracked by EF Core
+    student.FirstName = "Ali Updated";
+    student.Email = "ali22@mgail.com";
+
+    Console.WriteLine($"After Change In Memory: {student.FirstName}");
+
+    // Save changes
+    // Runtime logging shows the actual executed UPDATE SQL.
+    int affectedRows = context.SaveChanges();
+
+    Console.WriteLine();
+    Console.WriteLine($"Affected Rows: {affectedRows}");
+    Console.WriteLine("Changes saved to database.");
+    Console.WriteLine();
+}
+
+
+/// <summary>
+/// Prints a separator between examples.
+/// </summary>
+static void PrintSeparator()
+{
+    Console.WriteLine(new string('-', 60));
+    Console.WriteLine();
+}
+
 
 
 
@@ -218,6 +339,7 @@ static void ShowStudents(AppDbContext context)
         Console.WriteLine(
             $"{student.StudentId} - {student.FirstName} {student.LastName}");
     }
+    Console.WriteLine($"Tracked Entities Count : {context.ChangeTracker.Entries().Count()}");
 }
 
 
@@ -356,15 +478,6 @@ static void ShowGoodPaginationApproach(
     Console.WriteLine();
 }
 
-
-/// <summary>
-/// Prints a separator between examples.
-/// </summary>
-static void PrintSeparator()
-{
-    Console.WriteLine(new string('-', 60));
-    Console.WriteLine();
-}
 
 
 
