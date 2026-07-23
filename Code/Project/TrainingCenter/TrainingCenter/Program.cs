@@ -196,7 +196,52 @@ ShowCourseReport(context);
 
 
 // Call main methods
-ComparePagination(context);
+//ComparePagination(context);
+
+
+ShowStudents(context);
+ShowTrackingQuery(context);
+
+
+
+static void ShowStudents(AppDbContext context)
+{
+    var students = context.Students
+        .AsNoTracking()
+        .Where(s => s.Status == "Active")
+        .OrderBy(s => s.StudentId)
+        .ToList();
+
+
+    foreach (var student in students)
+    {
+        Console.WriteLine(
+            $"{student.StudentId} - {student.FirstName} {student.LastName}");
+    }
+}
+
+
+static void ShowTrackingQuery(AppDbContext context)
+{
+    Console.WriteLine("TRACKING QUERY - Default Behavior");
+    Console.WriteLine("----------------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var trackingQuery =
+        context.Students;
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(trackingQuery.ToQueryString());
+
+    // Execute query
+    var trackedStudents = trackingQuery.ToList();
+
+    Console.WriteLine($"Returned Students Count: {trackedStudents.Count}");
+    Console.WriteLine($"Tracked Entities Count : {context.ChangeTracker.Entries().Count()}");
+    Console.WriteLine("EF Core is tracking these entities.");
+    Console.WriteLine();
+}
 
 
 /// <summary>
