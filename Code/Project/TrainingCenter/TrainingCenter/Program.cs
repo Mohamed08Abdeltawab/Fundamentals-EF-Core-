@@ -77,7 +77,7 @@ Console.WriteLine();
 // Call filtering function
 //GetActiveStudents(context);
 
-
+/*
 
 // Call examples
 Example_First(context);
@@ -173,6 +173,71 @@ ShowStudentsWithEnrollmentsAndCourses(context);
 
 // Call main methods
 ShowCourseReport(context);
+
+
+*/
+
+// Call main methods
+ShowStudentsWithProfiles(context);
+
+
+/// <summary>
+/// Shows students with or without profiles using Left Join.
+/// </summary>
+static void ShowStudentsWithProfiles(AppDbContext context)
+{
+    Console.WriteLine("Students With Profiles - Left Join");
+    Console.WriteLine("----------------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var report =
+        from s in context.Students
+        join p in context.StudentProfiles
+            on s.StudentId equals p.StudentId
+            into profileGroup
+        from p in profileGroup.DefaultIfEmpty()
+        select new
+        {
+            s.StudentId,
+            StudentName = s.FirstName + " " + s.LastName,
+            City = p != null ? p.City : "No Profile",
+            Country = p != null ? p.Country : "No Profile"
+        };
+
+    var report2 = context.Students.Select(s => new
+    {
+        s.StudentId,
+        FullName = s.FirstName + " " + s.LastName,
+        City = s.StudentProfile.City ?? "No Profile",
+        Country = s.StudentProfile.Country ?? "No Profile"
+    });
+
+    // Apply sorting
+    var query =
+        report.OrderBy(x => x.StudentId);
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(query.ToQueryString());
+
+    // Execute query
+    var result = query.ToList();
+
+    // Print readable output
+    Console.WriteLine("Student Report:");
+    Console.WriteLine("---------------");
+
+    Console.WriteLine();
+    foreach (var row in result)
+    {
+        Console.WriteLine(
+            $"{row.StudentId} - {row.StudentName} - {row.City} - {row.Country}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"Total Students: {result.Count}");
+}
+
 
 
 /// <summary>
