@@ -178,7 +178,55 @@ ShowCourseReport(context);
 */
 
 // Call main methods
-ShowStudentsWithProfiles(context);
+//ShowStudentsWithProfiles(context);
+
+
+
+// Call main method
+ShowStudentEnrollments(context);
+
+
+/// <summary>
+/// Shows student enrollments by flattening Students -> Enrollments using SelectMany().
+/// </summary>
+static void ShowStudentEnrollments(AppDbContext context)
+{
+    Console.WriteLine("Student Enrollments Using SelectMany()");
+    Console.WriteLine("--------------------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var query = context.Students
+        .SelectMany(s => s.Enrollments,
+                    (s, e) => new
+                    {
+                        s.StudentId,
+                        StudentName = s.FirstName + " " + s.LastName,
+                        e.CourseId,
+                        e.Status
+                    })
+        .OrderBy(x => x.StudentId);
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(query.ToQueryString());
+
+    // Execute query
+    var report = query.ToList();
+
+    Console.WriteLine("Student Course Registrations:");
+    Console.WriteLine("-----------------------------");
+    Console.WriteLine();
+
+    foreach (var row in report)
+    {
+        Console.WriteLine(
+            $"{row.StudentId} - {row.StudentName} - Course: {row.CourseId} - {row.Status}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"Total Registrations: {report.Count}");
+}
+
 
 
 /// <summary>
