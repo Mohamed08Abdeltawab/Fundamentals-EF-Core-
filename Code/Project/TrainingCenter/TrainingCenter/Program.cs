@@ -170,6 +170,58 @@ static void CompareApproaches(AppDbContext context)
 ShowStudentsWithEnrollmentsAndCourses(context);
 
 
+
+// Call main methods
+ShowCourseReport(context);
+
+
+/// <summary>
+/// Shows a course report by joining Courses with Instructors.
+/// </summary>
+static void ShowCourseReport(AppDbContext context)
+{
+    Console.WriteLine("Course Report Using Join()");
+    Console.WriteLine("--------------------------");
+    Console.WriteLine();
+
+    // Build query first
+    var query =
+        context.Courses
+               .Join(
+                   context.Instructors,
+                   course => course.InstructorId,
+                   instructor => instructor.InstructorId,
+                   (course, instructor) => new
+                   {
+                       course.Title,
+                       course.Code,
+                       InstructorName =
+                           instructor.FirstName + " " + instructor.LastName
+                   })
+               .OrderBy(x => x.Title);
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(query.ToQueryString());
+
+    // Execute query
+    var report = query.ToList();
+
+    // Print readable output
+    Console.WriteLine("Courses With Instructors:");
+    Console.WriteLine("-------------------------");
+
+    Console.WriteLine();
+    foreach (var row in report)
+    {
+        Console.WriteLine(
+            $"{row.Code} - {row.Title} - {row.InstructorName}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine($"Total Courses: {report.Count}");
+}
+
+
 /// <summary>
 /// Loads students with their enrollments and related courses.
 /// </summary>
