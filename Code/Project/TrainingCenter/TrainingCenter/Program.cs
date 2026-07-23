@@ -163,6 +163,50 @@ static void CompareApproaches(AppDbContext context)
 }
 
 
+
+
+
+// Call main method
+ShowStudentsWithEnrollmentsAndCourses(context);
+
+
+/// <summary>
+/// Loads students with their enrollments and related courses.
+/// </summary>
+static void ShowStudentsWithEnrollmentsAndCourses(AppDbContext context)
+{
+    // Build query first
+    var query = context.Students
+        .Include(s => s.Enrollments)
+            .ThenInclude(e => e.Course)
+        .OrderBy(s => s.StudentId);
+
+    // Preview SQL before execution
+    PreviewSQLUsingToQueryString(query.ToQueryString());
+
+    // Execute query
+    var students = query.ToList();
+
+    Console.WriteLine("\nStudents With Enrollments and Courses:");
+    Console.WriteLine("--------------------------------------");
+
+    foreach (var student in students)
+    {
+        Console.WriteLine($"{student.StudentId} - {student.FirstName} {student.LastName}");
+
+        foreach (var enrollment in student.Enrollments)
+        {
+            Console.WriteLine(
+                $"   Course: {enrollment.Course.Title}, " +
+                $"Status: {enrollment.Status}, " +
+                $"Progress: {enrollment.ProgressPercent}%");
+        }
+
+        Console.WriteLine();
+    }
+}
+
+
 /// <summary>
 /// Demonstrates the bad N+1 approach by loading students first,
 /// then running one additional count query per student.
