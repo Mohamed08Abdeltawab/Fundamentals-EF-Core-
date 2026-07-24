@@ -1,30 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace TrainingCenter.Entities
 {
-    // Represents Instructors table
-    public class Instructor
+    public partial class Instructor
     {
         public int InstructorId { get; set; }
 
+        public string FirstName { get; set; } = null!;
 
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
+        public string LastName { get; set; } = null!;
 
+        public string Email { get; set; } = null!;
+
+        public DateOnly HireDate { get; set; }
 
         public decimal Salary { get; set; }
 
+        public int? ManagerId { get; set; }
 
-        public int? ManagerId { get; set; } // Self-reference
+        public bool IsActive { get; set; }
 
+        public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
 
-        // Navigation
-        public Instructor Manager { get; set; }
-        public List<Course> Courses { get; set; }
+        public virtual ICollection<Instructor> InverseManager { get; set; } = new List<Instructor>();
+
+        public virtual Instructor? Manager { get; set; }
     }
-
 }

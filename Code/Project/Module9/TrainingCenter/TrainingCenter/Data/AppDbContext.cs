@@ -1,77 +1,188 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
+using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Data;
 using System.Text;
-using System.Threading.Tasks;
-
-// Import EF Core namespace
-using Microsoft.EntityFrameworkCore;
-
-
-// Import entity namespace
 using TrainingCenter.Entities;
-
 
 namespace TrainingCenter.Data
 {
-    // AppDbContext represents the connection/session with the database
-    public class AppDbContext : DbContext
+    public partial class AppDbContext: DbContext
     {
-        // Constructor receives configuration options and passes them to the base DbContext class
-        public AppDbContext(DbContextOptions<AppDbContext> options)
-            : base(options)
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
+            
         }
 
+        //declear entities 
+        public virtual DbSet<Student> Students { get; set; }
+        public virtual DbSet<Course> Courses { get; set; }
+        public virtual DbSet<Instructor> Instructors { get; set; }
+        public virtual DbSet<Enrollment> Enrollments { get; set; }
+        public virtual DbSet<StudentProfile> StudentProfiles { get; set; }
 
-        // Each DbSet represents a table in the database
-        public DbSet<Student> Students { get; set; }
-
-
-        public DbSet<Course> Courses { get; set; }
-
-
-        public DbSet<Instructor> Instructors { get; set; }
-
-
-        public DbSet<Enrollment> Enrollments { get; set; }
-
-
-        public DbSet<StudentProfile> StudentProfiles { get; set; }
-
-
-
-
-//👉 EF Core is using default conventions only
-//🧠 Why This Breaks
-
-//EF Core tries to guess the primary key using naming conventions:
-
-//👉 It expects:
-
-//Id
-//StudentProfileId
-
-//❌ But your key is:
-
-//StudentId
-
-//👉 EF cannot detect it automatically → ERROR
-
-
+        //on meodel creating 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<Course>(entity =>
+            {
+                entity.HasIndex(e => e.InstructorId, "IX_Course_InstructorId");
+                entity.HasIndex(e => e.Status, "IX_Course_Status");
+                entity.HasIndex(e => e.Code, "UQ_Courses_Code").IsUnique();
+                entity.Property(e => e.Code).HasMaxLength(30);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())").HasColumnType("datetime");
+                entity.Property(e => e.Description).HasMaxLength(30);
+                entity.Property(e => e.Price).HasColumnType("decimal(10,2");
+                entity.Property(e => e.PublishedAt).HasColumnType("datetime");
+                entity.Property(e => e.Status).HasMaxLength(20);
+                entity.Property(e => e.Title).HasMaxLength(150);
 
-            // Configure StudentProfile primary key
+                //relationship
+                entity.HasOne(d => d.Instructor)
+                        .WithMany(p => p.Courses)
+                        .HasForeignKey(d => d.InstructorId)
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_Courses_Instructors");
+
+            });
+
+
+            modelBuilder.Entity<Enrollment>(entity =>
+            {
+                // Indexes for faster search
+                entity.HasIndex(e => e.CourseId, "IX_Enrollments_CourseId");
+                entity.HasIndex(e => e.Status, "IX_Enrollments_Status");
+                entity.HasIndex(e => e.StudentId, "IX_Enrollments_StudentId");
+
+
+                // Prevent duplicate enrollment:
+                // Same student cannot enroll twice
+                entity.HasIndex(e => new { e.StudentId, e.CourseId },
+                                "UQ_Enrollments_StudentId_CourseId")
+                      .IsUnique();
+
+
+                // Completion date
+                entity.Property(e => e.CompletionDate)
+                      .HasColumnType("datetime");
+
+
+                // Default enrollment date = now
+                entity.Property(e => e.EnrollmentDate)
+                      .HasDefaultValueSql("(getdate())")
+                      .HasColumnType("datetime");
+
+
+                // Decimal grades
+                entity.Property(e => e.FinalGrade)
+                      .HasColumnType("decimal(5, 2)");
+
+
+                entity.Property(e => e.ProgressPercent)
+                      .HasColumnType("decimal(5, 2)");
+
+
+                entity.Property(e => e.Status)
+                      .HasMaxLength(20);
+
+
+                // Many enrollments belong to one course
+                entity.HasOne(d => d.Course)
+                      .WithMany(p => p.Enrollments)
+                      .HasForeignKey(d => d.CourseId)
+                      .HasConstraintName("FK_Enrollments_Courses");
+
+
+                // Many enrollments belong to one student
+                entity.HasOne(d => d.Student)
+                      .WithMany(p => p.Enrollments)
+                      .HasForeignKey(d => d.StudentId)
+                      .HasConstraintName("FK_Enrollments_Students");
+            });
+            modelBuilder.Entity<Instructor>(entity =>
+            {
+                // Self-reference manager relationship
+                entity.HasIndex(e => e.ManagerId, "IX_Instructors_ManagerId");
+
+
+                // Email must be unique
+                entity.HasIndex(e => e.Email, "UQ_Instructors_Email")
+                      .IsUnique();
+
+
+                entity.Property(e => e.Email).HasMaxLength(150);
+                entity.Property(e => e.FirstName).HasMaxLength(50);
+
+
+                // Default = active instructor
+                entity.Property(e => e.IsActive)
+                      .HasDefaultValue(true);
+
+
+                entity.Property(e => e.LastName).HasMaxLength(50);
+
+
+                entity.Property(e => e.Salary)
+                      .HasColumnType("decimal(10, 2)");
+
+
+                // One manager can manage many instructors
+                entity.HasOne(d => d.Manager)
+                      .WithMany(p => p.InverseManager)
+                      .HasForeignKey(d => d.ManagerId)
+                      .HasConstraintName("FK_Instructors_Manager");
+            });
+            modelBuilder.Entity<Student>(entity =>
+            {
+                entity.HasIndex(e => e.Status, "IX_Students_Status");
+
+
+                // Email unique
+                entity.HasIndex(e => e.Email, "UQ_Students_Email")
+                      .IsUnique();
+
+
+                entity.Property(e => e.Email).HasMaxLength(150);
+                entity.Property(e => e.FirstName).HasMaxLength(50);
+                entity.Property(e => e.LastName).HasMaxLength(50);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(30);
+
+
+                // Registration date defaults to now
+                entity.Property(e => e.RegisteredAt)
+                      .HasDefaultValueSql("(getdate())")
+                      .HasColumnType("datetime");
+
+
+                entity.Property(e => e.Status).HasMaxLength(20);
+            });
+
             modelBuilder.Entity<StudentProfile>(entity =>
             {
-                entity.HasKey(e => e.StudentId); 
+                // Primary key = StudentId
+                entity.HasKey(e => e.StudentId);
+
+
+                // Not auto increment
+                entity.Property(e => e.StudentId)
+                      .ValueGeneratedNever();
+
+
+                entity.Property(e => e.Address).HasMaxLength(200);
+                entity.Property(e => e.Bio).HasMaxLength(500);
+                entity.Property(e => e.City).HasMaxLength(100);
+                entity.Property(e => e.Country).HasMaxLength(100);
+                entity.Property(e => e.LinkedInUrl).HasMaxLength(200);
+
+
+                // One Student has one Profile
+                entity.HasOne(d => d.Student)
+                      .WithOne(p => p.StudentProfile)
+                      .HasForeignKey<StudentProfile>(d => d.StudentId)
+                      .HasConstraintName("FK_StudentProfiles_Students");
             });
         }
 
-
     }
-
-
 }
