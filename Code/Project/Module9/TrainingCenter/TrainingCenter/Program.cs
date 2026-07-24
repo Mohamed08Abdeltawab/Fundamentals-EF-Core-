@@ -142,7 +142,62 @@ RunGoodExampleWithTransaction(context);
 
 
 // Call main method
-ShowLazyLoadingExample(context);
+//ShowLazyLoadingExample(context);
+
+
+ShowExplicitLoadingExample(context);
+
+
+
+
+
+static void ShowExplicitLoadingExample(AppDbContext context)
+{
+    Console.WriteLine("Explicit Loading Example");
+    Console.WriteLine("------------------------");
+
+    // Step 1:
+    // Load one student only without using Include().
+    var student = context.Students
+        .OrderBy(s => s.StudentId)
+        .FirstOrDefault();
+
+    if (student == null)
+    {
+        Console.WriteLine("No students found.");
+        return;
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("Student loaded:");
+    Console.WriteLine($"{student.StudentId} - {student.FirstName} {student.LastName}");
+
+    Console.WriteLine();
+    Console.WriteLine("At this point, only the student was loaded in memory.");
+    Console.WriteLine("Enrollments are NOT loaded yet.");
+    Console.WriteLine();
+
+    Console.WriteLine("Now explicitly loading student.Enrollments via context.Entry()...");
+    Console.WriteLine("Watch the console logs: EF Core will execute a separate SQL query now.");
+    Console.WriteLine();
+
+    // Step 2:
+    // Manually load the related Enrollments collection using Explicit Loading.
+    context.Entry(student).Collection(s => s.Enrollments).Load();
+
+    Console.WriteLine($"Total Enrollments loaded: {student.Enrollments.Count}");
+    Console.WriteLine();
+
+    // Step 3:
+    // Loop through the explicitly loaded enrollments.
+    foreach (var enrollment in student.Enrollments)
+    {
+        Console.WriteLine(
+            $"Enrollment Id: {enrollment.EnrollmentId}, " +
+            $"Course Id: {enrollment.CourseId}, " +
+            $"Status: {enrollment.Status}");
+    }
+}
 
 
 /// <summary>
